@@ -60,7 +60,7 @@ class DBUtils
         } elseif (is_null($value)) {
             return 'null';
         } elseif ($value instanceof DateTime) {
-            return $value->format('Y-d-m H:i:s');
+            return "'" . $value->format('Y-m-d H:i:s') . "'";
         }
 
         return trim($value);

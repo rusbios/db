@@ -4,6 +4,7 @@ declare(strict_types = 1);
 namespace RB\DB\Builder;
 
 use PDO;
+use RB\DB\Exceptions\QueryException;
 
 class PDOConnect
 {
@@ -39,10 +40,13 @@ class PDOConnect
     /**
      * @param string $sql
      * @return int
+     * @throws QueryException
      */
     public function insert(string $sql): int
     {
-        $this->connect->query($sql);
+        if ($this->connect->query($sql) === false) {
+            throw new QueryException('Error sql "' . $sql . '"');
+        }
         return (int)$this->connect->lastInsertId();
     }
 

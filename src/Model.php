@@ -4,6 +4,7 @@ declare(strict_types = 1);
 namespace RB\DB;
 
 use DateTime;
+use RB\DB\Builder\DB;
 
 class Model
 {
@@ -56,16 +57,15 @@ class Model
     /**
      * @param array $where
      * @param array $orders
-     * @param int $offset
      * @param int|null $limit
      * @return Model[]
      * @throws Exceptions\OperatorException
      */
-    public static function select(array $where = [], array $orders = [], int $offset = 0, int $limit = null): iterable
+    public static function select(array $where = [], int $offset = 0, int $limit = null): iterable
     {
         $models = [];
 
-        foreach (DB::select(static::getTable(), [], $where, $orders, $offset, $limit) as $data) {
+        foreach (DB::select(static::getTable(), [], $where, $offset, $limit) as $data) {
             $models[] = new static($data);
         }
 
@@ -191,7 +191,7 @@ class Model
                 if ($this->timestamps) {
                     $this->data[self::CREATED_TS] = $diff[self::CREATED_TS] = $this->data[self::UPDATED_TS];
                 }
-                $this->oldData[$this->primaryKey] = DB::insert(self::getTable(), $diff);
+                $this->oldData[$this->primaryKey] = DB::insert(static::getTable(), $diff);
             } else {
                 DB::update(self::getTable(), $diff, [$this->primaryKey => $this->oldData[$this->primaryKey]]);
             }

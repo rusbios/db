@@ -3,7 +3,7 @@ declare(strict_types = 1);
 
 namespace RB\DB\Builder;
 
-use RB\DB\Exceptions\{OperatorException, PropertyException};
+use RB\DB\Exceptions\{OperatorException, PropertyException, QueryException};
 use RB\DB\DBUtils;
 
 class DB
@@ -48,6 +48,7 @@ class DB
      * @param array $values
      * @return int
      * @throws PropertyException
+     * @throws QueryException
      */
     public static function insert(string $table, array $values): int
     {
