@@ -32,7 +32,7 @@ class Model
     }
 
     /**
-     * @return Model[]
+     * @return self[]
      */
     public static function all(): iterable
     {
@@ -41,10 +41,10 @@ class Model
 
     /**
      * @param mixed $id
-     * @return Model|null
+     * @return self|null
      * @throws Exceptions\OperatorException
      */
-    public static function find($id): Model
+    public static function find($id): self
     {
         $model = new static();
         $collect = self::select([
@@ -58,7 +58,7 @@ class Model
      * @param array $where
      * @param array $orders
      * @param int|null $limit
-     * @return Model[]
+     * @return self[]
      * @throws Exceptions\OperatorException
      */
     public static function select(array $where = [], int $offset = 0, int $limit = null): iterable
@@ -128,7 +128,7 @@ class Model
     /**
      * @param string $name
      * @param mixed|null $value
-     * @return $this
+     * @return self
      */
     public function __set(string $name, $value = null): self
     {
@@ -157,7 +157,7 @@ class Model
 
     /**
      * @param int $id
-     * @return $this
+     * @return self
      */
     public function setId(int $id): self
     {
@@ -167,7 +167,7 @@ class Model
 
     /**
      * @param array $attributes
-     * @return $this
+     * @return self
      * @throws Exceptions\OperatorException
      * @throws Exceptions\PropertyException
      */
@@ -198,5 +198,15 @@ class Model
         }
 
         return $this;
+    }
+
+    /**
+     * @throws Exceptions\OperatorException
+     */
+    public function deleted(): void
+    {
+        if ($this->primaryKey) {
+            DB::deleted(self::getTable(), [$this->primaryKey => $this->data[$this->primaryKey]]);
+        }
     }
 }

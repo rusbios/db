@@ -100,4 +100,21 @@ class DB
 
         return self::$connect->updated($sql);
     }
+
+    /**
+     * @param string $table
+     * @param array $where
+     * @return int
+     * @throws OperatorException
+     */
+    public static function deleted(string $table, array $where = []): int
+    {
+        foreach ($where as $key => $value) {
+            $wheres[] = self::filter($key, $value);
+        }
+
+        $sql = 'deleted from ' . DBUtils::wrap($table) . ' where ' . implode(' and ', $wheres);
+
+        return self::$connect->updated($sql);
+    }
 }
