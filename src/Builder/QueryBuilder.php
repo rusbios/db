@@ -16,6 +16,7 @@ class QueryBuilder
     private string $table;
     private array $columns = [];
     private array $having = [];
+    private array $orHaving = [];
     private array $orderBy = [];
     private array $groupBy = [];
     private array $joins = [];
@@ -179,7 +180,7 @@ class QueryBuilder
      */
     public function having(string $key, $value = null, string $operator = '='): self
     {
-        $this->having[] = $this->filter($key, $value, $operator, false);
+        $this->having[] = $this->filter($key, $value, $operator);
         return $this;
     }
 
@@ -192,7 +193,7 @@ class QueryBuilder
      */
     public function orHaving(string $key, $value = null, string $operator = '='): self
     {
-        $this->having[] = $this->filter($key, $value, $operator, true);
+        $this->orHaving[] = $this->filter($key, $value, $operator);
         return $this;
     }
 
@@ -202,7 +203,7 @@ class QueryBuilder
      */
     public function havingRaw(string $sql): self
     {
-        $this->having[] = "and $sql";
+        $this->having[] = $sql;
         return $this;
     }
 
@@ -212,7 +213,7 @@ class QueryBuilder
      */
     public function orHavingRaw(string $sql): self
     {
-        $this->having[] = "or $sql";
+        $this->orHaving[] = $sql;
         return $this;
     }
 
@@ -306,13 +307,15 @@ class QueryBuilder
     }
 
     /**
-     * @param $column
+     * @param string|array|null $column
      * @return array|null
      */
-    public function get($column): ?array
+    public function get($column = null): ?array
     {
-        $this->columns = [];
-        $this->column($column);
+        if ($column) {
+            $this->columns = [];
+            $this->column($column);
+        }
 
         return self::$connect->query($this->build());
     }
@@ -347,8 +350,17 @@ class QueryBuilder
             $sql .= implode(' ', $this->joins);
         }
 
-        if ($this->where) {
-            $sql .= ' where ' . implode(' ', $this->where);
+        if ($this->where || $this->orWhere) {
+            if ($this->where) {
+                $where = implode(' and ', $this->where);
+            }
+
+            if ($this->orWhere) {
+                $where = empty($where) ? '' : ' or ';
+                $where .= implode(' or ', $this->orWhere);
+            }
+
+            $sql .= ' where ' . $where;
         }
 
         if ($this->union) {
@@ -363,8 +375,17 @@ class QueryBuilder
             $sql .= ' order by ' . implode(', ', $this->groupBy);
         }
 
-        if ($this->having) {
-            $sql .= ' having ' . implode(' ', $this->having);
+        if ($this->having || $this->orHaving) {
+            if ($this->having) {
+                $having = implode(' and ', $this->having);
+            }
+
+            if ($this->orHaving) {
+                $having = empty($having) ? '' : ' or ';
+                $having .= implode(' or ', $this->orHaving);
+            }
+
+            $sql .= ' having ' . $having;
         }
 
         if ($this->offset) {

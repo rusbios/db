@@ -8,6 +8,8 @@ use RB\DB\DBUtils;
 
 class DB
 {
+    use WhereTrait;
+
     private static PDOConnect $connect;
 
     /**
@@ -22,55 +24,23 @@ class DB
      * @param string $table
      * @param array $columns
      * @param array $where
-     * @param array $orders
      * @param int $offset
      * @param int|null $limit
      * @return array
      * @throws OperatorException
      */
-    public static function select(
-        string $table,
-        array $columns = [],
-        array $where = [],
-        array $orders = [],
-        int $offset = 0,
-        int $limit = null
-    ): array
+    public static function select(string $table, array $columns = [], array $where = [], int $offset = 0, int $limit = null): array
     {
-        foreach ($columns as &$column) {
-            $column = DBUtils::wrap($column);
-        }
-        $columns = $columns ? implode(', ', $columns) : '*';
-
-        $sql = "select $columns from " . DBUtils::wrap($table);
+        QueryBuilder::setConnect(self::$connect);
+        $qb = QueryBuilder::table($table)
+            ->column($columns)
+            ->limit($limit, $offset);
 
         foreach ($where as $key => $value) {
-            $wheres[] = self::where($key, $value);
-        }
-        if (isset($wheres)) {
-            $sql .= ' where ' . implode(' and ', $wheres);
+            $qb->where($key, $value);
         }
 
-        foreach ($orders as $key => $order) {
-            if (is_int($key)) {
-                $key = $order;
-                $order = '';
-            }
-            $orderBy[] = DBUtils::wrap($key) . ' ' . trim($order) ?? 'asc';
-        }
-        if (isset($orderBy)) {
-            $sql .= ' order by ' . implode(', ', $orderBy);
-        }
-
-        if ($offset > 0) {
-            $sql .= " offset $offset";
-        }
-
-        if ($limit) {
-            $sql .= " limit $limit";
-        }
-
-        return self::$connect->query($sql);
+        return $qb->get();
     }
 
     /**
@@ -121,34 +91,12 @@ class DB
         $sql = 'update ' . DBUtils::wrap($table) . ' set ' . implode(', ', $data);
 
         foreach ($where as $key => $value) {
-            $wheres[] = self::where($key, $value);
+            $wheres[] = self::filter($key, $value);
         }
         if (isset($wheres)) {
             $sql .= ' where ' . implode(' and ', $wheres);
         }
 
         return self::$connect->updated($sql);
-    }
-
-    /**
-     * @param string $key
-     * @param string|bool|int|float|null $value
-     * @param string $operator
-     * @return string
-     * @throws OperatorException
-     */
-    private static function where(string $key, $value = null, string $operator = '='): string
-    {
-        $operator = trim($operator);
-
-        if (!in_array($operator, ['=', '!=', '<>', '<', '>', '<=', '>='])) {
-            throw new OperatorException('Operator not found');
-        }
-
-        if (is_null($value)) {
-            $operator = $operator == '=' ? 'is' : 'is not';
-        }
-
-        return DBUtils::wrap($key) . " $operator " . DBUtils::formatter($value);
     }
 }

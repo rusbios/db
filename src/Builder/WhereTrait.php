@@ -12,6 +12,7 @@ trait WhereTrait
     protected array $options = ['=', '!=', '<>', '<', '>', '<=', '>='];
 
     private array $where = [];
+    private array $orWhere = [];
 
     /**
      * @param string $key
@@ -22,7 +23,7 @@ trait WhereTrait
      */
     public function where(string $key, $value = null, string $operator = '='): self
     {
-        $this->where[] = $this->filter($key, $value, $operator, false);
+        $this->where[] = $this->filter($key, $value, $operator);
         return $this;
     }
 
@@ -35,7 +36,7 @@ trait WhereTrait
      */
     public function orWhere(string $key, $value = null, string $operator = '='): self
     {
-        $this->where[] = $this->filter($key, $value, $operator, true);
+        $this->orWhere[] = $this->filter($key, $value, $operator);
         return $this;
     }
 
@@ -45,7 +46,7 @@ trait WhereTrait
      */
     public function whereRaw(string $sql): self
     {
-        $this->where[] = "and $sql";
+        $this->where[] = $sql;
         return $this;
     }
 
@@ -55,7 +56,7 @@ trait WhereTrait
      */
     public function orWhereRaw(string $sql): self
     {
-        $this->where[] = "or $sql";
+        $this->orWhere[] = $sql;
         return $this;
     }
 
@@ -66,7 +67,7 @@ trait WhereTrait
      */
     public function whereIn(string $column, array $params): self
     {
-        $this->where[] = 'and ' . $this->in($column, $params, false);
+        $this->where[] = $this->in($column, $params, false);
         return $this;
     }
 
@@ -77,7 +78,7 @@ trait WhereTrait
      */
     public function orWhereIn(string $column, array $params): self
     {
-        $this->where[] = 'or ' . $this->in($column, $params, false);
+        $this->orWhere[] = $this->in($column, $params, false);
         return $this;
     }
 
@@ -88,7 +89,7 @@ trait WhereTrait
      */
     public function whereNotIn(string $column, array $params): self
     {
-        $this->where[] = 'and ' . $this->in($column, $params, true);
+        $this->where[] = $this->in($column, $params, true);
         return $this;
     }
 
@@ -99,7 +100,7 @@ trait WhereTrait
      */
     public function orWhereNotIn(string $column, array $params): self
     {
-        $this->where[] = 'or ' . $this->in($column, $params, true);
+        $this->orWhere[] = $this->in($column, $params, true);
         return $this;
     }
 
@@ -111,7 +112,7 @@ trait WhereTrait
      */
     public function whereBetween(string $column, $start, $end): self
     {
-        $this->where[] = 'and ' . $this->between($column, $start, $end, false);
+        $this->where[] = $this->between($column, $start, $end, false);
         return $this;
     }
 
@@ -123,7 +124,7 @@ trait WhereTrait
      */
     public function orWhereBetween(string $column, $start, $end): self
     {
-        $this->where[] = 'or ' . $this->between($column, $start, $end, false);
+        $this->orWhere[] = $this->between($column, $start, $end, false);
         return $this;
     }
 
@@ -135,7 +136,7 @@ trait WhereTrait
      */
     public function whereNotBetween(string $column, $start, $end): self
     {
-        $this->where[] = 'and ' . $this->between($column, $start, $end, true);
+        $this->where[] = $this->between($column, $start, $end, true);
         return $this;
     }
 
@@ -147,7 +148,7 @@ trait WhereTrait
      */
     public function orWhereNotBetween(string $column, $start, $end): self
     {
-        $this->where[] = 'or ' . $this->between($column, $start, $end, true);
+        $this->orWhere[] = $this->between($column, $start, $end, true);
         return $this;
     }
 
@@ -155,13 +156,12 @@ trait WhereTrait
      * @param string $key
      * @param mixed $value
      * @param string $operator
-     * @param bool $or
      *
      * @return QueryBuilder
      *
      * @throws OperatorException
      */
-    private function filter(string $key, $value = null, string $operator = '=', bool $or = false): string
+    private function filter(string $key, $value = null, string $operator = '='): string
     {
         $operator = trim($operator);
 
@@ -174,7 +174,6 @@ trait WhereTrait
         }
 
         $param = [
-            $or ? 'or' : 'and',
             DBUtils::wrap($key),
             $operator,
             DBUtils::formatter($value),
