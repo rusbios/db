@@ -8,8 +8,8 @@ use RB\DB\Builder\DB;
 
 class Model
 {
-    const CREATED_TS = 'created_ts';
-    const UPDATED_TS = 'updated_ts';
+    public const CREATED_TS = 'created_ts';
+    public const UPDATED_TS = 'updated_ts';
 
     protected string $table;
     public string $primaryKey = 'id';
@@ -36,7 +36,7 @@ class Model
      */
     public static function all(): iterable
     {
-        return self::select();
+        return static::select();
     }
 
     /**
@@ -47,7 +47,7 @@ class Model
     public static function find($id): self
     {
         $model = new static();
-        $collect = self::select([
+        $collect = static::select([
             $model->primaryKey => $id
         ]);
 
@@ -184,16 +184,16 @@ class Model
         if (isset($diff)) {
 
             if ($this->timestamps) {
-                $this->data[self::UPDATED_TS] = $diff[self::UPDATED_TS] = new DateTime();
+                $this->data[static::UPDATED_TS] = $diff[static::UPDATED_TS] = new DateTime();
             }
 
             if (empty($this->oldData[$this->primaryKey])) {
                 if ($this->timestamps) {
-                    $this->data[self::CREATED_TS] = $diff[self::CREATED_TS] = $this->data[self::UPDATED_TS];
+                    $this->data[static::CREATED_TS] = $diff[static::CREATED_TS] = $this->data[static::UPDATED_TS];
                 }
                 $this->oldData[$this->primaryKey] = DB::insert(static::getTable(), $diff);
             } else {
-                DB::update(self::getTable(), $diff, [$this->primaryKey => $this->oldData[$this->primaryKey]]);
+                DB::update(static::getTable(), $diff, [$this->primaryKey => $this->oldData[$this->primaryKey]]);
             }
         }
 
@@ -206,7 +206,7 @@ class Model
     public function deleted(): void
     {
         if ($this->primaryKey) {
-            DB::deleted(self::getTable(), [$this->primaryKey => $this->data[$this->primaryKey]]);
+            DB::deleted(static::getTable(), [$this->primaryKey => $this->oldData[$this->primaryKey]]);
         }
     }
 }
