@@ -410,7 +410,7 @@ class QueryBuilder
     private function addJoin(string $table, string $firstKey, string $secondKey, string $operator = '='): string
     {
         $operator = trim($operator);
-        if (!in_array($operator, $this->options)) {
+        if (!in_array($operator, DBUtils::OPTIONS)) {
             throw new OperatorException('Join operator not found');
         }
 

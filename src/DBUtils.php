@@ -4,9 +4,13 @@ declare(strict_types = 1);
 namespace RB\DB;
 
 use DateTime;
+use RB\DB\Builder\QueryBuilder;
+use RB\DB\Exceptions\OperatorException;
 
 class DBUtils
 {
+    public const OPTIONS = ['=', '!=', '<>', '<', '>', '<=', '>='];
+
     /**
      * @param string $name
      * @return string
@@ -64,5 +68,35 @@ class DBUtils
         }
 
         return trim($value);
+    }
+
+    /**
+     * @param string $key
+     * @param mixed $value
+     * @param string $operator
+     *
+     * @return QueryBuilder
+     *
+     * @throws OperatorException
+     */
+    public static function filter(string $key, $value = null, string $operator = '='): string
+    {
+        $operator = trim($operator);
+
+        if (!in_array($operator, self::OPTIONS)) {
+            throw new OperatorException('Operator not found');
+        }
+
+        if (is_null($value)) {
+            $operator = $operator == '=' ? 'is' : 'is not';
+        }
+
+        $param = [
+            self::wrap($key),
+            $operator,
+            self::formatter($value),
+        ];
+
+        return trim(implode(' ', $param));
     }
 }

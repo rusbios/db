@@ -9,8 +9,6 @@ use RB\DB\Exceptions\OperatorException;
 
 trait WhereTrait
 {
-    protected array $options = ['=', '!=', '<>', '<', '>', '<=', '>='];
-
     private array $where = [];
     private array $orWhere = [];
 
@@ -161,25 +159,9 @@ trait WhereTrait
      *
      * @throws OperatorException
      */
-    private function filter(string $key, $value = null, string $operator = '='): string
+    public function filter(string $key, $value = null, string $operator = '='): string
     {
-        $operator = trim($operator);
-
-        if (!in_array($operator, $this->options)) {
-            throw new OperatorException('Operator not found');
-        }
-
-        if (is_null($value)) {
-            $operator = $operator == '=' ? 'is' : 'is not';
-        }
-
-        $param = [
-            DBUtils::wrap($key),
-            $operator,
-            DBUtils::formatter($value),
-        ];
-
-        return trim(implode(' ', $param));
+        return DBUtils::filter($key, $value, $operator);
     }
 
     /**

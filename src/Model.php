@@ -206,7 +206,7 @@ class Model
     public function deleted(): void
     {
         if ($this->primaryKey) {
-            DB::deleted(static::getTable(), [$this->primaryKey => $this->oldData[$this->primaryKey]]);
+            DB::deleted(static::getTable(), [$this->primaryKey => (int)$this->oldData[$this->primaryKey]]);
         }
     }
 }

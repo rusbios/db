@@ -113,7 +113,7 @@ class DB
             $wheres[] = self::filter($key, $value);
         }
 
-        $sql = 'deleted from ' . DBUtils::wrap($table) . ' where ' . implode(' and ', $wheres);
+        $sql = 'delete from ' . DBUtils::wrap($table) . ' where ' . implode(' and ', $wheres);
 
         return self::$connect->updated($sql);
     }
