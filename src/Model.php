@@ -5,11 +5,12 @@ namespace RB\DB;
 
 use DateTime;
 use RB\DB\Builder\DB;
+use RB\DB\Migrate\Table;
 
 class Model
 {
-    public const CREATED_TS = 'created_ts';
-    public const UPDATED_TS = 'updated_ts';
+    public const CREATED_TS = Table::CREATED_TS;
+    public const UPDATED_TS = Table::UPDATED_TS;
 
     protected string $table;
     public string $primaryKey = 'id';

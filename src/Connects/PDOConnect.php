@@ -1,12 +1,12 @@
 <?php
 declare(strict_types = 1);
 
-namespace RB\DB\Builder;
+namespace RB\DB\Connects;
 
 use PDO;
 use RB\DB\Exceptions\QueryException;
 
-class PDOConnect
+class PDOConnect implements DBConnetcInterface
 {
     protected PDO $connect;
 

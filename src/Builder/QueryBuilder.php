@@ -4,14 +4,14 @@ declare(strict_types = 1);
 namespace RB\DB\Builder;
 
 use Exception;
-use RB\DB\{DBUtils, Model};
+use RB\DB\{Connects\DBConnetcInterface, DBUtils, Model};
 use RB\DB\Exceptions\OperatorException;
 
 class QueryBuilder
 {
     use WhereTrait;
 
-    private static PDOConnect $connect;
+    private static DBConnetcInterface $connect;
 
     private string $table;
     private array $columns = [];
@@ -40,9 +40,9 @@ class QueryBuilder
     }
 
     /**
-     * @param PDOConnect $connect
+     * @param DBConnetcInterface $connect
      */
-    public static function setConnect(PDOConnect $connect): void
+    public static function setConnect(DBConnetcInterface $connect): void
     {
         self::$connect = $connect;
     }

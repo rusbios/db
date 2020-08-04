@@ -3,7 +3,9 @@ declare(strict_types = 1);
 
 namespace RB\DB;
 
-class Migration
+abstract class Migration
 {
-    //TODO
+    public abstract function up(): void;
+
+    public abstract function down(): void;
 }

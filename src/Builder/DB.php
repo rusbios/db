@@ -4,18 +4,19 @@ declare(strict_types = 1);
 namespace RB\DB\Builder;
 
 use RB\DB\Exceptions\{OperatorException, PropertyException, QueryException};
+use RB\DB\Connects\DBConnetcInterface;
 use RB\DB\DBUtils;
 
 class DB
 {
     use WhereTrait;
 
-    private static PDOConnect $connect;
+    private static DBConnetcInterface $connect;
 
     /**
-     * @param PDOConnect $connect
+     * @param DBConnetcInterface $connect
      */
-    public static function setConnect(PDOConnect $connect): void
+    public static function setConnect(DBConnetcInterface $connect): void
     {
         self::$connect = $connect;
     }

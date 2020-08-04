@@ -4,11 +4,12 @@ declare(strict_types = 1);
 namespace RB\DB\Builder;
 
 use DateTime;
+use RB\DB\Migrate\Table;
 use RB\DB\Model;
 
 trait SoftDeleted
 {
-    public static string $deletedTs = 'deleted_ts';
+    public static string $deletedTs = Table::DELETED_TS;
 
     /**
      * @param array $where
