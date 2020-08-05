@@ -45,6 +45,10 @@ trait SqlGenerate
                 $tmp .= $colum[self::OPTION_NULLABLE] ? ' null' : ' not null';
             }
 
+            if ($colum[self::OPTION_UNIQUE]) {
+                $tmp .= ' unique';
+            }
+
             $columns[] = $tmp;
         }
 
@@ -88,6 +92,10 @@ trait SqlGenerate
                     $sql .= ' default ' . $colum[self::OPTION_DEFAULT];
                 }
                 $sql .= $colum[self::OPTION_NULLABLE] ? ' null' : ' not null';
+            }
+
+            if ($colum[self::OPTION_UNIQUE]) {
+                $sql .= ' unique';
             }
 
             $rows[] = $sql.';';

@@ -118,9 +118,21 @@ abstract class ColumnAbstract implements ColumnInterface
         return $this;
     }
 
+    /**
+     * @return $this
+     */
     public function unsigned(): self
     {
         $this->colums[$this->lastColumnName][self::OPTION_AUTO_INCREMENT] = true;
+        return $this;
+    }
+
+    /**
+     * @return $this
+     */
+    public function unique(): self
+    {
+        $this->colums[$this->lastColumnName][self::OPTION_UNIQUE] = true;
         return $this;
     }
 

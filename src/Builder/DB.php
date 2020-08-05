@@ -41,7 +41,11 @@ class DB
             $qb->where($key, $value);
         }
 
-        return $qb->get();
+        try {
+            return $qb->get();
+        } catch (\Exception $e) {
+            throw self::getLastError();
+        }
     }
 
     /**
@@ -69,7 +73,11 @@ class DB
             implode(', ', $data)
         );
 
-        return self::$connect->insert($sql);
+        try {
+            return self::$connect->insert($sql);
+        } catch (\Exception $e) {
+            throw self::getLastError();
+        }
     }
 
     /**
@@ -99,7 +107,11 @@ class DB
             $sql .= ' where ' . implode(' and ', $wheres);
         }
 
-        return self::$connect->updated($sql);
+        try {
+            return self::$connect->updated($sql);
+        } catch (\Exception $e) {
+            throw self::getLastError();
+        }
     }
 
     /**
@@ -116,6 +128,27 @@ class DB
 
         $sql = 'delete from ' . DBUtils::wrap($table) . ' where ' . implode(' and ', $wheres);
 
-        return self::$connect->updated($sql);
+        try {
+            return self::$connect->updated($sql);
+        } catch (\Exception $e) {
+            throw self::getLastError();
+        }
+    }
+
+    /**
+     * @param string $string
+     * @return string
+     */
+    public static function quote(string $string): string
+    {
+        return self::$connect->quote($string);
+    }
+
+    /**
+     * @return QueryException|null
+     */
+    public static function getLastError(): ?QueryException
+    {
+        return self::$connect->error();
     }
 }

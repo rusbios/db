@@ -4,7 +4,7 @@ declare(strict_types = 1);
 namespace RB\DB;
 
 use DateTime;
-use RB\DB\Builder\QueryBuilder;
+use RB\DB\Builder\{DB, QueryBuilder};
 use RB\DB\Exceptions\OperatorException;
 
 class DBUtils
@@ -67,7 +67,7 @@ class DBUtils
             return "'" . $value->format('Y-m-d H:i:s') . "'";
         }
 
-        return trim($value);
+        return DB::quote(trim($value));
     }
 
     /**

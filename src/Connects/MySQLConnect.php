@@ -6,23 +6,22 @@ namespace RB\DB\Connects;
 use PDO;
 use RB\DB\Exceptions\QueryException;
 
-class PDOConnect implements DBConnetcInterface
+class MySQLConnect implements DBConnetcInterface
 {
     protected PDO $connect;
 
     /**
      * PDOConnect constructor.
-     * @param string $driver
      * @param string $host
      * @param string $dbName
      * @param string $user
      * @param string $password
      * @param int $port
      */
-    public function __construct(string $driver, string $host, string $dbName, string $user, string $password, int $port)
+    public function __construct(string $host, string $dbName, string $user, string $password, int $port = 3306)
     {
         $this->connect = new PDO(
-            sprintf('%s:host=%s;port=%i;dbname=%s', $driver, $host, $port, $dbName),
+            sprintf('mysql:host=%s;port=%s;dbname=%s', $host, $port, $dbName),
             $user,
             $password
         );
@@ -57,5 +56,25 @@ class PDOConnect implements DBConnetcInterface
     public function updated(string $sql): int
     {
         return $this->connect->query($sql)->rowCount();
+    }
+
+    /**
+     * @param string $string
+     * @return string
+     */
+    public function quote(string $string): string
+    {
+        return $this->connect->quote($string);
+    }
+
+    /**
+     * @return QueryException
+     */
+    public function error(): QueryException
+    {
+        return new QueryException(
+            'Query error: ' . implode(' : ', $this->connect->errorInfo()),
+            $this->connect->errorCode()
+        );
     }
 }

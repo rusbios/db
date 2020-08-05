@@ -5,7 +5,8 @@ namespace RB\DB\Migrate;
 
 use Exception;
 use RB\DB\Connects\DBConnetcInterface;
-use RB\DB\Migration;
+use RB\DB\{DBUtils, Migration};
+use RB\DB\Migrations\MigrationHistory;
 
 class Run
 {
@@ -32,13 +33,24 @@ class Run
     {
         $schema = new Schema($db);
 
+        (new MigrationHistory())->up($schema, new Table());
+
         foreach (self::$migrations as $class) {
+
+            if (MigrateHistoryModel::getByModel($class)) {
+                continue;
+            }
+
             /** @var Migration $migrate */
             $migrate = new $class();
 
             try {
                 $migrate->up($schema, new Table());
-                // todo save migrate run
+
+                $history = new MigrateHistoryModel();
+                $history->class_name = $class;
+                $history->save();
+
             } catch (Exception $e) {
                 $migrate->down($schema);
                 throw $e;

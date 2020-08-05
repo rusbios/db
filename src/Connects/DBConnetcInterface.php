@@ -25,4 +25,15 @@ interface DBConnetcInterface
      * @return int
      */
     public function updated(string $sql): int;
+
+    /**
+     * @param string $string
+     * @return string
+     */
+    public function quote(string $string): string;
+
+    /**
+     * @return QueryException
+     */
+    public function error(): QueryException;
 }

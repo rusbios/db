@@ -32,7 +32,7 @@ class QueryBuilder
      */
     protected function __construct(string $table)
     {
-        if (!self::$connect) {
+        if (empty(self::$connect)) {
             throw new Exception('Connect not found');
         }
 
@@ -236,7 +236,7 @@ class QueryBuilder
     {
         $array = self::$connect->query($this->build());
 
-        return !empty($array[0]) ? new Model($array[0]) : null;
+        return empty($array[0]) ? null : new Model($array[0]);
     }
 
     /**
