@@ -37,7 +37,7 @@ interface ColumnInterface
     const COLUMS = [
         self::COLUMN_INT,
         self::COLUMN_BIG_INT,
-        self::COLUMMN_SMOL_INT,
+        self::COLUMMN_SMAL_INT,
         self::COLUMN_TINY_INT,
         self::COLUMN_FLOAT,
         self::COLUMN_BIT,

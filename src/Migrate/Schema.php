@@ -4,42 +4,29 @@ declare(strict_types = 1);
 namespace RB\DB\Migrate;
 
 use RB\DB\Connects\DBConnetcInterface;
+use RB\DB\DBUtils;
 
 class Schema
 {
     private DBConnetcInterface $DBConnetc;
-
-    /** @var Table[] */
-    private iterable $created;
-
-    /** @var Table[] */
-    private iterable $modify;
-
-    /** @var string[] */
-    private array $drops;
     
     public function __construct(DBConnetcInterface $DBConnetc)
     {
         $this->DBConnetc = $DBConnetc;
     }
 
-    protected function create(string $tableName, Table $table): void
+    public function create(Table $table): void
     {
-
+        $this->DBConnetc->query($table->sql());
     }
 
-    protected function modify(string $tableName, Table $table): void
+    public function modify(Table $table): void
     {
-
+        $this->DBConnetc->query($table->sql());
     }
 
-    protected function drop(string $tableName): void
+    public function drop(string $tableName): void
     {
-
-    }
-
-    public function run()
-    {
-        $table = new Table();
+        $this->DBConnetc->query(sprintf('drop table %s;', DBUtils::wrap($tableName)));
     }
 }

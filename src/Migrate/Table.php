@@ -7,11 +7,20 @@ use RB\DB\DBUtils;
 
 class Table extends ColumnAbstract
 {
+    use SqlGenerate;
+
     private string $tableName;
     private string $lastAddColumnName;
-    
-    public function setTable(string $name): self
+    private bool $updated = false;
+
+    /**
+     * @param string $name
+     * @param bool $updated
+     * @return $this
+     */
+    public function setTable(string $name, bool $updated = false): self
     {
+        $this->updated = $updated;
         $this->tableName = $name;
         return $this;
     }
@@ -31,7 +40,9 @@ class Table extends ColumnAbstract
     public function bigIncrements(string $columnName = self::ID): self
     {
         return $this->bigInteger($columnName)
-            ->addColumnParam($columnName, false, null, true, true, true);
+            ->unsigned()
+            ->autoIncrement()
+            ->primary();
     }
 
     public function integer(string $columnName): self
@@ -42,7 +53,9 @@ class Table extends ColumnAbstract
     public function increments(string $columnName = self::ID): self
     {
         return $this->integer($columnName)
-            ->addColumnParam($columnName, false, null, true, true, true);
+            ->unsigned()
+            ->autoIncrement()
+            ->primary();
     }
 
     public function smallInteger(string $columnName): self
@@ -58,13 +71,13 @@ class Table extends ColumnAbstract
     public function float(string $columnName, int $total = 8, int $scale = 2): self
     {
         return $this->addColumn($columnName, self::COLUMN_FLOAT)
-            ->addColumnOption($columnName, $total, $scale);
+            ->param($total, $scale);
     }
     
     public function bit(string $columnName, int $length = 1): self
     {
         return $this->addColumn($columnName, self::COLUMN_BIT)
-            ->addColumnOption($length);
+            ->length($length);
     }
 
     public function bool(string $columnName): self
@@ -92,19 +105,19 @@ class Table extends ColumnAbstract
     public function enum(string $columnName, array $values): self
     {
         return $this->addColumn($columnName, self::COLUMN_ENUM)
-            ->addColumnParam($columnName, true, $values);
+            ->values($values);
     }
 
     public function set(string $columnName, array $values): self
     {
         return $this->addColumn($columnName, self::COLUMN_SET)
-            ->addColumnParam($columnName, true, $values);
+            ->values($values);
     }
 
     public function string(string $columnName, int $length = 100): self
     {
         return $this->addColumn($columnName, self::COLUMN_VARCHAR)
-            ->addColumnOption($columnName, $length);
+            ->length($length);
     }
 
     public function text(string $columnName): self
@@ -115,7 +128,7 @@ class Table extends ColumnAbstract
     public function char(string $columnName, int $length = 100): self
     {
         return $this->addColumn($columnName, self::COLUMN_CHAR)
-            ->addColumnOption($columnName, $length);
+            ->length($length);
     }
     
     public function tinyText(string $columnName): self
@@ -145,7 +158,7 @@ class Table extends ColumnAbstract
         $this->addColumn($columnName, self::COLUMN_DATETIME);
         
         if ($currentTs) {
-            $this->addColumnParam($columnName, null, self::DEFAULT_CURRENT_TS);
+            $this->default(self::DEFAULT_CURRENT_TS);
         }
         
         return $this;
@@ -156,7 +169,7 @@ class Table extends ColumnAbstract
         $this->addColumn($columnName, self::COLUMN_TIMESTAMP);
 
         if ($currentTs) {
-            $this->addColumnParam($columnName, null, self::DEFAULT_CURRENT_TS);
+            $this->default(self::DEFAULT_CURRENT_TS);
         }
 
         return $this;
