@@ -4,14 +4,14 @@ declare(strict_types = 1);
 namespace RB\DB\Builder;
 
 use Exception;
-use RB\DB\{Connects\DBConnetcInterface, DBUtils, Model};
+use RB\DB\{DBConnect, DBUtils, Model};
 use RB\DB\Exceptions\OperatorException;
 
 class QueryBuilder
 {
     use WhereTrait;
 
-    private static DBConnetcInterface $connect;
+    private ?string $connectName;
 
     private string $table;
     private array $columns = [];
@@ -27,24 +27,12 @@ class QueryBuilder
     /**
      * QueryBuilder constructor.
      * @param string $table
-     *
-     * @throws Exception
+     * @param string|null $connectName
      */
-    protected function __construct(string $table)
+    protected function __construct(string $table, string $connectName = null)
     {
-        if (empty(self::$connect)) {
-            throw new Exception('Connect not found');
-        }
-
+        $this->connectName = $connectName;
         $this->table = $table;
-    }
-
-    /**
-     * @param DBConnetcInterface $connect
-     */
-    public static function setConnect(DBConnetcInterface $connect): void
-    {
-        self::$connect = $connect;
     }
 
     /**
@@ -234,7 +222,7 @@ class QueryBuilder
      */
     public function first(): ?Model
     {
-        $array = self::$connect->query($this->build());
+        $array = DBConnect::get($this->connectName)->query($this->build());
 
         return empty($array[0]) ? null : new Model($array[0]);
     }
@@ -251,7 +239,7 @@ class QueryBuilder
 
         $this->column($column);
 
-        $array = self::$connect->query($this->build());
+        $array = DBConnect::get($this->connectName)->query($this->build());
 
         if (count($column) == 1) {
             foreach ($array as $item) {
@@ -273,7 +261,7 @@ class QueryBuilder
         $this->columns = [];
         $this->columnRaw('max(' . DBUtils::wrap($column) . ') ' . trim($column));
 
-        $array = self::$connect->query($this->build());
+        $array = DBConnect::get($this->connectName)->query($this->build());
 
         return $array[0][trim($column)] ?? 0;
     }
@@ -287,7 +275,7 @@ class QueryBuilder
         $this->columns = [];
         $this->columnRaw('count(' . DBUtils::wrap($column) . ') ' . trim($column));
 
-        $array = self::$connect->query($this->build());
+        $array = DBConnect::get($this->connectName)->query($this->build());
 
         return $array[0][trim($column)] ?? 0;
     }
@@ -301,7 +289,7 @@ class QueryBuilder
         $this->columns = [];
         $this->columnRaw('avg(' . DBUtils::wrap($column) . ') ' . trim($column));
 
-        $array = self::$connect->query($this->build());
+        $array = DBConnect::get($this->connectName)->query($this->build());
 
         return $array[0][trim($column)] ?? 0;
     }
@@ -317,7 +305,7 @@ class QueryBuilder
             $this->column($column);
         }
 
-        return self::$connect->query($this->build());
+        return DBConnect::get($this->connectName)->query($this->build());
     }
 
     /**

@@ -3,38 +3,34 @@ declare(strict_types = 1);
 
 namespace RB\DB\Migrate;
 
-use RB\DB\Connects\DBConnetcInterface;
-use RB\DB\DBUtils;
+use RB\DB\{DBConnect, DBUtils};
 use Exception;
 
 class Schema
 {
-    private DBConnetcInterface $DBConnetc;
-    
-    public function __construct(DBConnetcInterface $DBConnetc)
+    /**
+     * @param Table $table
+     * @param string|null $connectName
+     */
+    public function create(Table $table, ?string $connectName): void
     {
-        $this->DBConnetc = $DBConnetc;
+        DBConnect::get($connectName)->query($table->sql());
     }
 
-    public function create(Table $table): void
+    public function modify(Table $table, ?string $connectName): void
     {
-        $this->DBConnetc->query($table->sql());
+        DBConnect::get($connectName)->query($table->sql());
     }
 
-    public function modify(Table $table): void
+    public function drop(string $tableName, ?string $connectName): void
     {
-        $this->DBConnetc->query($table->sql());
+        DBConnect::get($connectName)->query(sprintf('drop table %s;', DBUtils::wrap($tableName)));
     }
 
-    public function drop(string $tableName): void
-    {
-        $this->DBConnetc->query(sprintf('drop table %s;', DBUtils::wrap($tableName)));
-    }
-
-    public function hasTable(string $table): bool
+    public function hasTable(string $table, ?string $connectName): bool
     {
         try {
-            $res = $this->DBConnetc->query(sprintf(
+            $res = DBConnect::get($connectName)->query(sprintf(
                 'show tables like \'%s\'',
                 trim($table)
             ));
@@ -44,10 +40,10 @@ class Schema
         }
     }
 
-    public function hasColumn(string $table, string $column): bool
+    public function hasColumn(string $table, string $column, ?string $connectName): bool
     {
         try {
-            $res = $this->DBConnetc->query(sprintf(
+            $res = DBConnect::get($connectName)->query(sprintf(
                 'show columns from %s like %s',
                 DBUtils::wrap($table),
                 DBUtils::wrap($column)

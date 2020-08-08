@@ -12,6 +12,8 @@ class Model
     public const CREATED_TS = Table::CREATED_TS;
     public const UPDATED_TS = Table::UPDATED_TS;
 
+    protected static ?string $connectName;
+
     protected string $table;
     public string $primaryKey = 'id';
     public bool $timestamps = true;
@@ -66,7 +68,7 @@ class Model
     {
         $models = [];
 
-        foreach (DB::select(static::getTable(), [], $where, $offset, $limit) as $data) {
+        foreach (DB::connect(self::$connectName)::select(static::getTable(), [], $where, $offset, $limit) as $data) {
             $models[] = new static($data);
         }
 
@@ -80,7 +82,7 @@ class Model
      */
     public static function insert(array $values): int
     {
-        return DB::insert(static::getTable(), $values);
+        return DB::connect(self::$connectName)::insert(static::getTable(), $values);
     }
 
     /**
@@ -92,7 +94,7 @@ class Model
      */
     public static function update(array $values, array $where = []): int
     {
-        return DB::update(static::getTable(), $values, $where);
+        return DB::connect(self::$connectName)::update(static::getTable(), $values, $where);
     }
 
     /**
@@ -192,9 +194,9 @@ class Model
                 if ($this->timestamps) {
                     $this->data[static::CREATED_TS] = $diff[static::CREATED_TS] = $this->data[static::UPDATED_TS];
                 }
-                $this->oldData[$this->primaryKey] = DB::insert(static::getTable(), $diff);
+                $this->oldData[$this->primaryKey] = DB::connect(self::$connectName)::insert(static::getTable(), $diff);
             } else {
-                DB::update(static::getTable(), $diff, [$this->primaryKey => $this->oldData[$this->primaryKey]]);
+                DB::connect(self::$connectName)::update(static::getTable(), $diff, [$this->primaryKey => $this->oldData[$this->primaryKey]]);
             }
         }
 
@@ -207,7 +209,7 @@ class Model
     public function deleted(): void
     {
         if ($this->primaryKey) {
-            DB::deleted(static::getTable(), [$this->primaryKey => (int)$this->oldData[$this->primaryKey]]);
+            DB::connect(self::$connectName)::deleted(static::getTable(), [$this->primaryKey => (int)$this->oldData[$this->primaryKey]]);
         }
     }
 }

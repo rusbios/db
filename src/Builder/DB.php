@@ -5,20 +5,23 @@ namespace RB\DB\Builder;
 
 use RB\DB\Exceptions\{OperatorException, PropertyException, QueryException};
 use RB\DB\Connects\DBConnetcInterface;
+use RB\DB\DBConnect;
 use RB\DB\DBUtils;
 
 class DB
 {
     use WhereTrait;
 
-    private static DBConnetcInterface $connect;
+    private static ?string $tmpDbName;
 
     /**
-     * @param DBConnetcInterface $connect
+     * @param string $name
+     * @return static
      */
-    public static function setConnect(DBConnetcInterface $connect): void
+    public static function connect(string $name): self
     {
-        self::$connect = $connect;
+        self::$tmpDbName = $name;
+        return self;
     }
 
     /**
@@ -32,10 +35,12 @@ class DB
      */
     public static function select(string $table, array $columns = [], array $where = [], int $offset = 0, int $limit = null): array
     {
-        QueryBuilder::setConnect(self::$connect);
+        QueryBuilder::setConnect(DBConnect::get(self::$tmpDbName));
         $qb = QueryBuilder::table($table)
             ->column($columns)
             ->limit($limit, $offset);
+
+        self::$tmpDbName = null;
 
         foreach ($where as $key => $value) {
             $qb->where($key, $value);
@@ -51,11 +56,11 @@ class DB
     /**
      * @param string $table
      * @param array $values
-     * @return int
+     * @return int|null
      * @throws PropertyException
      * @throws QueryException
      */
-    public static function insert(string $table, array $values): int
+    public static function insert(string $table, array $values): ?int
     {
         foreach ($values as $key => $value) {
             $keys[] = DBUtils::wrap($key);
@@ -74,10 +79,13 @@ class DB
         );
 
         try {
-            return self::$connect->insert($sql);
+            $id = DBConnect::get(self::$tmpDbName)->insert($sql);
+            self::$tmpDbName = null;
         } catch (\Exception $e) {
             throw self::getLastError();
         }
+
+        return $id;
     }
 
     /**
@@ -108,10 +116,13 @@ class DB
         }
 
         try {
-            return self::$connect->updated($sql);
+            $count = DBConnect::get(self::$tmpDbName)->updated($sql);
+            self::$tmpDbName = null;
         } catch (\Exception $e) {
             throw self::getLastError();
         }
+
+        return $count;
     }
 
     /**
@@ -129,10 +140,13 @@ class DB
         $sql = 'delete from ' . DBUtils::wrap($table) . ' where ' . implode(' and ', $wheres);
 
         try {
-            return self::$connect->updated($sql);
+            $count = DBConnect::get(self::$tmpDbName)->updated($sql);
+            self::$tmpDbName = null;
         } catch (\Exception $e) {
             throw self::getLastError();
         }
+
+        return $count;
     }
 
     /**
@@ -141,7 +155,7 @@ class DB
      */
     public static function quote(string $string): string
     {
-        return self::$connect->quote($string);
+        return DBConnect::get()->quote($string);
     }
 
     /**
@@ -149,6 +163,6 @@ class DB
      */
     public static function getLastError(): ?QueryException
     {
-        return self::$connect->error();
+        return DBConnect::get(self::$tmpDbName)->error();
     }
 }
