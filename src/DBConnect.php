@@ -78,7 +78,7 @@ class DBConnect
                     $config['user'],
                     $config['password']
                 );
-                break;
+                return;
 
             case self::TYPE_LITESQL:
                 if (empty($config['path']) || !file_exists($config['path'])) {
@@ -86,7 +86,7 @@ class DBConnect
                 }
 
                 $this->connect = new PDO('sqlite:'.$config['path']);
-                break;
+                return;
         }
 
         throw new ConnectException('Type connect BD not found');

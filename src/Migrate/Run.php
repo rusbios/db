@@ -26,12 +26,11 @@ class Run
     }
 
     /**
-     * @param DBConnetcInterface $db
      * @throws Exception
      */
-    public static function applay(DBConnetcInterface $db): void
+    public static function applay(): void
     {
-        $schema = new Schema($db);
+        $schema = new Schema();
 
         (new MigrationHistory())->up($schema, new Table());
 
