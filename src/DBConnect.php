@@ -101,6 +101,23 @@ class DBConnect
         return $this->connect->query($sql)->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function beginTransaction(): self
+    {
+        $this->connect->beginTransaction();
+        return $this;
+    }
+
+    public function exec(string $sql): self
+    {
+        $this->connect->exec($sql);
+        return $this;
+    }
+
+    public function commit(): bool
+    {
+        return $this->connect->commit();
+    }
+
     /**
      * @param string $sql
      * @return int|null
