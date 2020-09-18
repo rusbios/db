@@ -29,7 +29,7 @@ class QueryBuilder
      * @param string $table
      * @param string|null $connectName
      */
-    protected function __construct(string $table, string $connectName = null)
+    protected function __construct(string $table, ?string $connectName = null)
     {
         $this->connectName = $connectName;
         $this->table = $table;
@@ -37,12 +37,12 @@ class QueryBuilder
 
     /**
      * @param string $name
+     * @param string|null $connectName
      * @return static
-     * @throws Exception
      */
-    public static function table(string $name): self
+    public static function table(string $name, ?string $connectName = null): self
     {
-        return new self($name);
+        return new self($name, $connectName);
     }
 
     /**
@@ -222,9 +222,9 @@ class QueryBuilder
      */
     public function first(): ?Model
     {
-        $array = DBConnect::get($this->connectName)->query($this->build());
+        $array = DBConnect::query($this->build(), null, $this->connectName);
 
-        return empty($array[0]) ? null : new Model($array[0]);
+        return empty($array[0]) ? null : new Model($array[0]); //TODO
     }
 
     /**
@@ -239,7 +239,7 @@ class QueryBuilder
 
         $this->column($column);
 
-        $array = DBConnect::get($this->connectName)->query($this->build());
+        $array = DBConnect::query($this->build(), null, $this->connectName);
 
         if (count($column) == 1) {
             foreach ($array as $item) {
@@ -261,7 +261,7 @@ class QueryBuilder
         $this->columns = [];
         $this->columnRaw('max(' . DBUtils::wrap($column) . ') ' . trim($column));
 
-        $array = DBConnect::get($this->connectName)->query($this->build());
+        $array = DBConnect::query($this->build(), null, $this->connectName);
 
         return $array[0][trim($column)] ?? 0;
     }
@@ -275,7 +275,7 @@ class QueryBuilder
         $this->columns = [];
         $this->columnRaw('count(' . DBUtils::wrap($column) . ') ' . trim($column));
 
-        $array = DBConnect::get($this->connectName)->query($this->build());
+        $array = DBConnect::query($this->build(), null, $this->connectName);
 
         return $array[0][trim($column)] ?? 0;
     }
@@ -289,7 +289,7 @@ class QueryBuilder
         $this->columns = [];
         $this->columnRaw('avg(' . DBUtils::wrap($column) . ') ' . trim($column));
 
-        $array = DBConnect::get($this->connectName)->query($this->build());
+        $array = DBConnect::query($this->build(), null, $this->connectName);
 
         return $array[0][trim($column)] ?? 0;
     }
@@ -305,7 +305,7 @@ class QueryBuilder
             $this->column($column);
         }
 
-        return DBConnect::get($this->connectName)->query($this->build());
+        return DBConnect::query($this->build(), null, $this->connectName);
     }
 
     /**

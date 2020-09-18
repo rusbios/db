@@ -7,7 +7,7 @@ use DateTime;
 use RB\DB\Builder\DB;
 use RB\DB\Migrate\Table;
 
-class Model
+abstract class Model
 {
     public const CREATED_TS = Table::CREATED_TS;
     public const UPDATED_TS = Table::UPDATED_TS;

@@ -6,157 +6,209 @@ namespace RB\DB;
 use PDO;
 use RB\DB\Exceptions\ConnectException;
 use RB\DB\Exceptions\QueryException;
+use RB\DB\Exceptions\ValidationException;
 
 class DBConnect
 {
-    public const TYPE_MYSQL = 'mysql';
-    public const TYPE_LITESQL = 'litesql';
+    public const DB_TYPE_MYSQL = 'mysql';
+    public const DB_TYPE_POSTGRESQL = 'postgresql';
+    public const DB_TYPE_SQLITE = 'sqlite';
 
-    /** @var self[] */
-    private static array $connections;
-    private static ?string $defaultName;
+    /** @var PDO[] */
+    protected static array $connections;
 
-    private PDO $connect;
+    /** @var string|null */
+    protected static ?string $defaultNameConnect;
 
     /**
-     * @param string $type
      * @param string $name
      * @param array $config
-     * @return static
-     * @throws ConnectException
+     * @param bool $default
+     * @throws ValidationException
      */
-    public static function created(string $type, string $name, array $config): self
+    public static function addConnect(string $name, array $config, bool $default = false): void
     {
-        if (empty(self::$connections[$name])) {
-            self::$connections[$name] = new self($type, $config);
-            if (empty(self::$defaultName)) {
-                self::setDetaultName($name);
-            }
+        if (empty($config['type']) || strlen($name) <= 3 || !empty(self::$connections[$name])) {
+            throw new ValidationException('Invalid config data');
         }
 
-        return self::get($name);
-    }
-
-    /**
-     * @param string|null $name
-     * @return static|null
-     */
-    public static function get(string $name = null): ?self
-    {
-        return self::$connections[$name ?: self::$defaultName] ?? null;
-    }
-
-    public static function setDetaultName(string $name): void
-    {
-        self::$defaultName = $name;
-    }
-
-    /**
-     * DBConnect constructor.
-     * @param string $type
-     * @param array $config
-     * @throws ConnectException
-     */
-    public function __construct(string $type, array $config)
-    {
-        switch (strtolower($type)) {
-            case self::TYPE_MYSQL:
-                if (empty($config['host'])
+        switch (strtolower($config['type'])) {
+            case self::DB_TYPE_MYSQL:
+                if (
+                    empty($config['host'])
                     || empty($config['dbName'])
                     || empty($config['user'])
                     || empty($config['password'])
                 ) {
-                    throw new ConnectException('Config not found');
+                    throw new ValidationException('MySQL configuration not found');
                 }
 
-                $this->connect = new PDO(
+                self::$connections[$name] = new PDO(
                     sprintf(
                         'mysql:host=%s;port=%s;dbname=%s',
                         $config['host'],
                         $config['port'] ?? 3306,
-                        $config['dbName']),
+                        $config['dbName']
+                    ),
                     $config['user'],
                     $config['password']
                 );
-                return;
+                break;
 
-            case self::TYPE_LITESQL:
+            case self::DB_TYPE_SQLITE:
                 if (empty($config['path']) || !file_exists($config['path'])) {
-                    throw new ConnectException('File BD not found');
+                    throw new ValidationException('File BD not found');
                 }
 
-                $this->connect = new PDO('sqlite:'.$config['path']);
-                return;
+                self::$connections[$name] = new PDO('sqlite:'.$config['path']);
+                break;
+
+            case self::DB_TYPE_POSTGRESQL:
+                if (
+                    empty($config['host'])
+                    || empty($config['dbName'])
+                    || empty($config['user'])
+                    || empty($config['password'])
+                ) {
+                    throw new ValidationException('PostgreSql configuration not found');
+                }
+
+                self::$connections[$name] = new PDO(
+                    sprintf(
+                        'pgsql:host=%s;port=%s;dbname=%s;',
+                        $config['host'],
+                        $config['port'] ?? 5432,
+                        $config['dbName']
+                    ),
+                    $config['user'],
+                    $config['password']
+                );
+                break;
+
+            default:
+                throw new ValidationException('Type connectioon not found');
         }
 
-        throw new ConnectException('Type connect BD not found');
+        if ($default) {
+            self::$defaultNameConnect = $name;
+        }
     }
 
     /**
-     * @param string $sql
-     * @return array
+     * @param string|null $connectName
+     * @return PDO|null
+     * @throws ConnectException
      */
-    public function query(string $sql): array
+    protected static function getConnect(?string $connectName = null): ?PDO
     {
-        return $this->connect->query($sql)->fetchAll(PDO::FETCH_ASSOC);
-    }
+        if (!$connectName) {
+            $connectName = empty(self::$defaultNameConnect)
+                ? array_key_first(self::$connections)
+                : self::$defaultNameConnect;
+        }
 
-    public function beginTransaction(): self
-    {
-        $this->connect->beginTransaction();
-        return $this;
-    }
+        if (!self::$connections[$connectName]) {
+            throw new ConnectException('DB connect not found');
+        }
 
-    public function exec(string $sql): self
-    {
-        $this->connect->exec($sql);
-        return $this;
-    }
-
-    public function commit(): bool
-    {
-        return $this->connect->commit();
+        return self::$connections[$connectName];
     }
 
     /**
      * @param string $sql
+     * @param int $pdoFetch
+     * @param string|null $connectName
+     * @return array
+     * @throws ConnectException
+     */
+    public static function query(string $sql, int $pdoFetch = PDO::FETCH_ASSOC, ?string $connectName = null): array
+    {
+        return self::getConnect($connectName)->query($sql)->fetchAll($pdoFetch);
+    }
+
+    /**
+     * @param string|null $connectName
+     * @return bool
+     * @throws ConnectException
+     */
+    public static function beginTransaction(?string $connectName = null): bool
+    {
+        return self::getConnect($connectName)->beginTransaction();
+    }
+
+    /**
+     * @param string $sql
+     * @param string|null $connectName
+     * @return false|int
+     * @throws ConnectException
+     */
+    public static function exec(string $sql, ?string $connectName = null): false|int
+    {
+        return self::getConnect($connectName)->exec($sql);
+    }
+
+    /**
+     * @param string|null $connectName
+     * @return bool
+     * @throws ConnectException
+     */
+    public static function commit(?string $connectName = null): bool
+    {
+        return self::getConnect($connectName)->commit();
+    }
+
+    /**
+     * @param string $sql
+     * @param string|null $connectName
      * @return int|null
+     * @throws ConnectException
      * @throws QueryException
      */
-    public function insert(string $sql): ?int
+    public static function insert(string $sql, ?string $connectName = null): ?int
     {
-        if ($this->connect->query($sql) === false) {
+        if (self::getConnect($connectName)->query($sql) === false) {
             throw new QueryException('Error sql "' . $sql . '"');
         }
-        return (int)$this->connect->lastInsertId() ?? null;
+        return (int)self::getConnect($connectName)->lastInsertId() ?? null;
     }
 
     /**
      * @param string $sql
-     * @return int
+     * @param string|null $connectName
+     * @return false|int
+     * @throws ConnectException
+     * @throws QueryException
      */
-    public function updated(string $sql): int
+    public static function updated(string $sql, ?string $connectName = null): false|int
     {
-        return $this->connect->query($sql)->rowCount();
+        if ($res = self::getConnect($connectName)->query($sql) === false) {
+            throw new QueryException('Error sql "' . $sql . '"');
+        }
+        return $res->rowCount();
     }
 
     /**
      * @param string $string
-     * @return string
+     * @param string|null $connectName
+     * @return false|string
+     * @throws ConnectException
      */
-    public function quote(string $string): string
+    public static function quote(string $string, ?string $connectName = null): string|false
     {
-        return $this->connect->quote($string);
+        return self::getConnect($connectName)->quote($string);
     }
 
     /**
+     * @param string|null $connectName
      * @return QueryException
+     * @throws ConnectException
      */
-    public function error(): QueryException
+    public static function error(?string $connectName = null): QueryException
     {
+        $connect = self::getConnect($connectName);
         return new QueryException(
-            'Query error: ' . implode(' : ', $this->connect->errorInfo()),
-            $this->connect->errorCode()
+            'Query error: ' . implode(' : ', $connect->errorInfo()),
+            $connect->errorCode()
         );
     }
 }

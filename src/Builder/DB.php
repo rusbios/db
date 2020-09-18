@@ -3,16 +3,24 @@ declare(strict_types = 1);
 
 namespace RB\DB\Builder;
 
-use RB\DB\Exceptions\{OperatorException, PropertyException, QueryException};
+use RB\DB\Exceptions\{OperatorException, PropertyException, QueryException, ConnectException};
 use RB\DB\Connects\DBConnetcInterface;
-use RB\DB\DBConnect;
-use RB\DB\DBUtils;
+use RB\DB\{DBConnect, DBUtils};
 
 class DB
 {
     use WhereTrait;
 
-    private static ?string $tmpDbName;
+    private ?string $connectName;
+
+    /**
+     * DB constructor.
+     * @param string|null $connectName
+     */
+    public function __construct(?string $connectName)
+    {
+        $this->connectName = $connectName;
+    }
 
     /**
      * @param string $name
@@ -20,8 +28,7 @@ class DB
      */
     public static function connect(string $name): self
     {
-        self::$tmpDbName = $name;
-        return self;
+        return new self($name);
     }
 
     /**
@@ -33,10 +40,69 @@ class DB
      * @return array
      * @throws OperatorException
      */
-    public static function select(string $table, array $columns = [], array $where = [], int $offset = 0, int $limit = null): array
+    public static function selected(string $table, array $columns = [], array $where = [], int $offset = 0, int $limit = null): array
     {
-        QueryBuilder::setConnect(DBConnect::get(self::$tmpDbName));
-        $qb = QueryBuilder::table($table)
+        return (new self())->select($table, $columns, $where, $offset, $limit);
+    }
+
+    /**
+     * @param string $table
+     * @param array $values
+     * @return int|null
+     * @throws PropertyException
+     * @throws QueryException
+     */
+    public static function inserted(string $table, array $values): ?int
+    {
+        return (new self())->insert($table, $values);
+    }
+
+    /**
+     * @param string $table
+     * @param array $values
+     * @param array $where
+     * @return int|null
+     * @throws OperatorException
+     * @throws PropertyException
+     */
+    public static function updated(string $table, array $values, array $where = []): ?int
+    {
+        return (new self())->update($table, $values, $where);
+    }
+
+    /**
+     * @param string $table
+     * @param array $where
+     * @return int
+     * @throws OperatorException
+     */
+    public static function deleted(string $table, array $where = []): int
+    {
+        return (new self())->delete($table, $where);
+    }
+
+    /**
+     * @param string $string
+     * @return string
+     * @throws ConnectException
+     */
+    public static function quoted(string $string): string
+    {
+        return DBConnect::quote($string);
+    }
+
+    /**
+     * @param string $table
+     * @param array $columns
+     * @param array $where
+     * @param int $offset
+     * @param int|null $limit
+     * @return array
+     * @throws OperatorException
+     */
+    public function select(string $table, array $columns = [], array $where = [], int $offset = 0, int $limit = null): array
+    {
+        $qb = QueryBuilder::table($table, $this->connectName)
             ->column($columns)
             ->limit($limit, $offset);
 
@@ -49,7 +115,7 @@ class DB
         try {
             return $qb->get();
         } catch (\Exception $e) {
-            throw self::getLastError();
+            throw $this->getLastError();
         }
     }
 
@@ -60,7 +126,7 @@ class DB
      * @throws PropertyException
      * @throws QueryException
      */
-    public static function insert(string $table, array $values): ?int
+    public function insert(string $table, array $values): ?int
     {
         foreach ($values as $key => $value) {
             $keys[] = DBUtils::wrap($key);
@@ -79,10 +145,10 @@ class DB
         );
 
         try {
-            $id = DBConnect::get(self::$tmpDbName)->insert($sql);
+            $id = DBConnect::insert($sql, $this->connectName);
             self::$tmpDbName = null;
         } catch (\Exception $e) {
-            throw self::getLastError();
+            throw $this->getLastError();
         }
 
         return $id;
@@ -96,7 +162,7 @@ class DB
      * @throws PropertyException
      * @throws OperatorException
      */
-    public static function update(string $table, array $values, array $where = []): int
+    public function update(string $table, array $values, array $where = []): int
     {
         foreach ($values as $key => $value) {
             $data[] = DBUtils::wrap($key) . ' = ' . DBUtils::formatter($value);
@@ -116,10 +182,10 @@ class DB
         }
 
         try {
-            $count = DBConnect::get(self::$tmpDbName)->updated($sql);
+            $count = DBConnect::updated($sql, $this->connectName);
             self::$tmpDbName = null;
         } catch (\Exception $e) {
-            throw self::getLastError();
+            throw $this->getLastError();
         }
 
         return $count;
@@ -131,7 +197,7 @@ class DB
      * @return int
      * @throws OperatorException
      */
-    public static function deleted(string $table, array $where = []): int
+    public function delete(string $table, array $where = []): int
     {
         foreach ($where as $key => $value) {
             $wheres[] = self::filter($key, $value);
@@ -140,29 +206,21 @@ class DB
         $sql = 'delete from ' . DBUtils::wrap($table) . ' where ' . implode(' and ', $wheres);
 
         try {
-            $count = DBConnect::get(self::$tmpDbName)->updated($sql);
+            $count = DBConnect::updated($sql, $this->connectName);
             self::$tmpDbName = null;
         } catch (\Exception $e) {
-            throw self::getLastError();
+            throw $this->getLastError();
         }
 
         return $count;
     }
 
     /**
-     * @param string $string
-     * @return string
-     */
-    public static function quote(string $string): string
-    {
-        return DBConnect::get()->quote($string);
-    }
-
-    /**
      * @return QueryException|null
+     * @throws ConnectException
      */
-    public static function getLastError(): ?QueryException
+    public function getLastError(): ?QueryException
     {
-        return DBConnect::get(self::$tmpDbName)->error();
+        return DBConnect::error($this->connectName);
     }
 }
